@@ -79,13 +79,13 @@ def run_astar(problem,h_func,cost_func):
                         old_node.parent = next_node
                         old_node.f = old_node.g + old_node.h
                         closed.remove(old_node)
-                        closed.add(old_node)
+                        opened.add(old_node)
                     else: # old path is better - do nothing
                         pass
                 else:
                     state_h = h_func(s)
                     new_node = Node(s,next_node,state_h,new_g,state_h+new_g)
-                    open.add(new_node)
+                    opened.add(new_node)
         return None
 
 
