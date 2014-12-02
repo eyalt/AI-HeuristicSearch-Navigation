@@ -3,6 +3,7 @@ from ways import load_map_from_csv, tools
 'implement your search methods here'
 from time import clock
 from ways.tools import compute_distance
+from random import randint
 
 class Problem(object):
     def __init__(self, init_state, goal_func, expand, id_func):
@@ -32,7 +33,7 @@ class open_set(object):
         self.nodes_dict.pop(node.state)
         self.nodes_f_val.pop(node.state)
     
-    @tools.timed
+    
     def pop_best(self):
         state = min(self.nodes_f_val, key=self.nodes_f_val.get)
         node = self.nodes_dict[state]
@@ -60,28 +61,24 @@ class close_set(object):
 
 def get_path(node):
     '''
-    returns the path that ends in this node according to the parant pointers.
+    returns the path that ends in this node according to the parent pointers.
     '''
     path = [node]
     while path[0].parent:
         path = [path[0].parent] + path
     return [x.state for x in path]
  
-def run_astar(problem, h_func, cost_func):
+def run_astar(problem, h_func, cost_func, time_limit = 2**100):
+    start_time = clock()
+    
     # initializing the algorithm groups
     hi = h_func(problem.init_state)
     closed = close_set()
     opened = open_set()
     opened.add(Node(problem.init_state, None, hi, 0, hi))
 
-
-    iterNum = 0
-    while not opened.is_empty():
+    while not opened.is_empty() and (clock() - start_time < time_limit):
         next_node = opened.pop_best()
-        
-        if iterNum % 20 == 0:
-            print ("iter %s: opened %s" % (iterNum, next_node.state))
-        iterNum+=1
         
         closed.add(next_node)
         if problem.goal_func(next_node.state):
@@ -120,46 +117,43 @@ def calc_link_time(roads,link):
     return link.distance / (roads.link_speed(link) / 3.6)
 
 def cost_func_gen(roads):
+#     junctions = roads.junctions()
     def cost_func(id1, id2):
-        j = roads.junctions()[id1]
+        j = roads[id1]
         for link in j.links:
             if link.target == id2:
                 return calc_link_time(roads, link)
     return cost_func
 
 def h_func_gen(roads, dest_id):
-    dest = roads.junctions()[dest_id]
+#     junctions = roads.junctions()
+    dest = roads[dest_id]
     def h_func(j_id):
-        j = roads.junctions()[j_id]
-        return compute_distance(j.lat,j.lon,dest.lat,dest.lon)
+        j = roads[j_id]
+        return (compute_distance(j.lat,j.lon,dest.lat,dest.lon) / 110) * 3600
         
     return h_func
 
 def expand_gen(roads):
+#     junctions = roads.junctions()
     def expand(j_id):
-        j = roads.junctions()[j_id]
+        j = roads[j_id]
         return [link.target for link in j.links]
     return expand
 
 def calc_path_time(roads, path):
     tot = 0
+#     junctions = roads.junctions()
     for i in range(len(path) - 1):
-        j = roads.junctions()[path[i]]
+        j = roads[path[i]]
         for link in j.links:
             if link.target == path[i+1]:
                 tot += calc_link_time(roads, link)
                 break
     return tot
 
-if __name__ == '__main__':
-    'self test your code' 
-    'note: assigning variables here make them global! use functions instead.'
+def simple(source, target):
     roads = load_map_from_csv('israel.csv')
-    roads.generation = 0
-    source = 597840
-    target = 466327
-#     source = 1
-#     target = 3
     problem = Problem(init_state=source, goal_func=(lambda x: (x == target)), expand=expand_gen(roads), id_func=1)
     
     start_time = clock()
@@ -169,7 +163,46 @@ if __name__ == '__main__':
     print ("# of nodes:", len(path))
     print ("Run time:", end_time - start_time)
     print ("Path time:", calc_path_time(roads, path))
+    print ("Huristic time:", h_func_gen(roads, target)(source))
     print ("Path:", path)
-     
+    return path
+
+def run_astar_random(roads, time_limit = 300):
+#     junctions = roads.junctions()
+    source = randint(0, len(roads))
+    target = randint(0, len(roads))
+    
+    problem = Problem(init_state=source, goal_func=(lambda x: (x == target)), expand=expand_gen(roads), id_func=1)
+    
+    start_time = clock()
+    path = run_astar(problem, h_func_gen(roads, target), cost_func_gen(roads),time_limit)
+    end_time = clock()
+    if path:
+        print ("----- From",source,"to",target,"-----")
+        print ("# of nodes:", len(path))
+        print ("Run time:", end_time - start_time)
+        print ("Path time:", calc_path_time(roads, path))
+        print ("Huristic time:", h_func_gen(roads, target)(source))
+        print ("Path:", path)
+    else:
+        print (source,"and",target,"aren't connected!")
+    return path
+    
+def run_twenty_paths():
+    roads = load_map_from_csv('israel.csv')
+    roads.generation = 0
+    
+    i=0
+    while i<20:
+        path = run_astar_random(roads)
+        if path:
+            i+=1
+        
+
+if __name__ == '__main__':
+    'self test your code' 
+    'note: assigning variables here make them global! use functions instead.'
+#     run_twenty_paths()
+    simple(171154,123198)
     
     

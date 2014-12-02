@@ -4,13 +4,14 @@ Don't use this file for the actual work; only minimal code should be here.
 We just parse input and call methods from other modules.
 '''
 from __future__ import division, print_function
+import search
 #do NOT import ways. This should be done from other files
 #simply import your modules and call the appropriate functions
 
 
 def simple(source, target):
     'call function to find path, and return list of indices'
-    raise NotImplementedError
+    return search.simple(source, target)
 
     
 def lights(source, target):
