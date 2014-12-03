@@ -204,14 +204,14 @@ def run_astar_random(roads, time_limit=300):
     problem = Problem(init_state=source, goal_func=(lambda x: (x == target)), expand=expand_gen(roads), id_func=1)
     
     start_time = clock()
-    path = run_astar(problem, h_func_gen(roads, target), cost_func_gen(roads), time_limit)
+    path = run_astar(problem, simple_h_func_gen(roads, target), simple_cost_func_gen(roads), time_limit)
     end_time = clock()
     if path:
         print ("----- From", source, "to", target, "-----")
         print ("# of nodes:", len(path))
         print ("Run time:", end_time - start_time)
         print ("Path time:", calc_path_time(roads, path))
-        print ("Huristic time:", h_func_gen(roads, target)(source))
+        print ("Huristic time:", simple_h_func_gen(roads, target)(source))
         print ("Path:", path)
     else:
         print (source, "and", target, "aren't connected!")
