@@ -5,8 +5,8 @@ We just parse input and call methods from other modules.
 '''
 from __future__ import division, print_function
 import search
-#do NOT import ways. This should be done from other files
-#simply import your modules and call the appropriate functions
+# do NOT import ways. This should be done from other files
+# simply import your modules and call the appropriate functions
 
 
 def simple(source, target):
@@ -16,7 +16,7 @@ def simple(source, target):
     
 def lights(source, target):
     'call function to find path, and return list of indices'
-    raise NotImplementedError
+    return search.lights(source, target)
     
 
 def assured(source, target, time, confidence):
