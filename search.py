@@ -166,7 +166,9 @@ def calc_path_time(roads, path):
     return tot
 
 def lights(source, target):
-    w = 10
+    source = int(source)
+    target = int(target)
+    w = 30
     roads = load_map_from_csv('israel.csv')
     problem = Problem(init_state=source, goal_func=(lambda x: (x == target)), expand=expand_gen(roads), id_func=1)
     
@@ -182,6 +184,8 @@ def lights(source, target):
     return path
 
 def simple(source, target):
+    source = int(source)
+    target = int(target)
     roads = load_map_from_csv('israel.csv')
     problem = Problem(init_state=source, goal_func=(lambda x: (x == target)), expand=expand_gen(roads), id_func=1)
     
@@ -228,18 +232,24 @@ def run_twenty_paths():
             i += 1
         
 
-def assured(source, target, time, confidence, time_limit=2 ** 100):
+def assured(source, target, time, confidence, time_limit=2 ** 100, roads=None):
     k = randint(1, 100)
-    return assured_k(source, target, time, confidence, k, time_limit)
+    return assured_k(source, target, time, confidence, k, time_limit, roads)
 
-def assured_k(source, target, time, confidence, k, time_limit=2 ** 100):
+def assured_k(source, target, time, confidence, k, time_limit=2**100, roads=None):
     generations = random.sample(range(100), k)
-    return assured_gens(source, target, time, confidence, generations, time_limit)
+    return assured_gens(source, target, time, confidence, generations, time_limit, roads)
 
-def assured_gens(source, target, time, confidence, generations, time_limit=2 ** 100):
-    print ("Have %d generations" % (len(generations),))
+def assured_gens(source, target, time, confidence, generations, time_limit=2**100, roads=None):
+    source = int(source)
+    target = int(target)
+    time = int(time)
+    confidence = float(confidence)
+    print ("Have %d generations. confidence set to %f" % (len(generations), confidence))
     print ("Generations:", ",".join([str(gen) for gen in sorted(generations)]))
-    roads = load_map_from_csv('israel.csv')
+    
+    if roads is None:
+        roads = load_map_from_csv('israel.csv')
     
     # calculate best path for each given generation
     paths = []
@@ -250,7 +260,6 @@ def assured_gens(source, target, time, confidence, generations, time_limit=2 ** 
         start_time = clock()
         path = run_astar(problem, simple_h_func_gen(roads, target), simple_cost_func_gen(roads), time_limit)
         print ("gen %d: %f seconds" % (gen, clock() - start_time))
-        print ("path:", path)
         
         if path:
             paths.append(path)
@@ -268,8 +277,10 @@ def assured_gens(source, target, time, confidence, generations, time_limit=2 ** 
     good_gens_number_for_path = {i:len([t for t in paths_times[i] if t < time * 60]) for i in paths_times}  # i : number of generations path is safe
     print ("good_gens_number_for_path:")
     print ("\n".join(("%d: %d" % (i, good_gens_number_for_path[i]) for i in good_gens_number_for_path)))
-    confident_ids = [i for i in good_gens_number_for_path if good_gens_number_for_path[i]>= confidence]
+    confident_ids = [i for i in good_gens_number_for_path if good_gens_number_for_path[i] >= confidence]
     print ("Confident ids:", ",".join([str(i) for i in confident_ids]))
+    print ("Found %d confident ids" % (len(confident_ids,)))
+    print("")
     
     if not confident_ids:
         return None
@@ -278,22 +289,66 @@ def assured_gens(source, target, time, confidence, generations, time_limit=2 ** 
     return paths[min(confident_ids, key=lambda x: sum(paths_times[x]))]
 
 
+
 if __name__ == '__main__':
     'self test your code' 
     'note: assigning variables here make them global! use functions instead.'
 #     run_twenty_paths()
-#     lights(171154, 123198)
-    start_time = clock()
-    path = assured_gens(source=171154, target=123198, time=50, confidence=92, generations=[11,24,40,51,80])
-    end_time = clock()
-    
     roads = load_map_from_csv('israel.csv')
 
-    if path:
-        print ("# of nodes:", len(path))
-        print ("Run time:", end_time - start_time)
-        print ("Path time:", calc_path_time(roads, path))
-        print ("Path:", path)
-    else:
-        print ("No assured path")
-        print ("Run time:", end_time - start_time)
+# this is for question 10. show path with and w/o lights
+#     simple_path = simple(171154, 123198)
+#     lights_path = lights(171154, 123198)
+#     draw.plot_path(roads, simple_path, color='g')
+#     draw.plot_path(roads, lights_path, color='r')
+#     draw.plot_lights()
+#     draw.plt.show()
+    
+    # 20 assured problems
+    problems = [('171154', '123198', '2559.85192632'),
+               ('495228', '89206', '5142.67398152'),
+               ('341367', '238100', '6752.41353903'),
+               ('833329', '224195', '14132.4098235'),
+               ('795682', '891696', '1929.33995947'),
+               ('617408', '796958', '11590.1877365'),
+               ('358948', '581591', '5386.10853204'),
+               ('925582', '587144', '8481.35736499'),
+               ('938317', '795849', '4642.23155003'),
+               ('452775', '546678', '4464.65691943'),
+               ('111972', '360880', '5758.15112434'),
+               ('532801', '190496', '3914.73694707'),
+               ('671054', '449796', '5548.53555159'),
+               ('863989', '733531', '3819.64041675'),
+               ('764425', '565724', '6193.99339083'),
+               ('812157', '914568', '6880.36468259'),
+               ('366137', '877341', '2094.81115949'),
+               ('781267', '505105', '8751.7385419'),
+               ('625831', '502267', '11163.1873778'),
+               ('437053', '470689', '5947.59750186')]
+    
+    for source,target,sec_time in problems:
+        k, p, T = 5, 50.0, (float(sec_time)/60)*1.11
+        print ("----- From", source, "to", target, "-----")
+        print ("k = %d, p = %f, T = %f minutes" % (k, p, T))
+        path = assured_k(source=source,target=target,time=T, confidence=p, k=k, roads=roads)
+        if path:
+            print ("# of nodes:", len(path))
+            print ("Path time:", calc_path_time(roads, path))
+            print ("Path:", path)
+        else:
+            print ("No assured path")
+        print("")
+            
+        p = 73.0
+        print ("----- From", source, "to", target, "-----")
+        print ("k = %d, p = %f, T = %f minutes" % (k, p, T))
+        path = assured_k(source=source,target=target,time=T, confidence=p, k=k, roads=roads)
+        if path:
+            print ("# of nodes:", len(path))
+            print ("Path time:", calc_path_time(roads, path))
+            print ("Path:", path)
+        else:
+            print ("No assured path")
+        print("")
+        print("---------------------------------------------------------------")
+        print("")
